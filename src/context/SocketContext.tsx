@@ -12,12 +12,22 @@ interface SocketContextType {
   socket: Socket | null;
   sendMessage: (receiverEmail: string, body: string) => Promise<Message>;
   isConnected: boolean;
+  userStatusUpdates: (
+    callback: (data: {
+      userId: string;
+      isOnline: boolean;
+      lastSeen: Date;
+    }) => void
+  ) => void;
+  removeUserStatusListener: () => void;
 }
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
   sendMessage: async () => Promise.reject(new Error("Socket not initialized")),
   isConnected: false,
+  userStatusUpdates: () => {},
+  removeUserStatusListener: () => {},
 });
 
 export const useSocket = () => {
@@ -98,7 +108,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         setConnectionError(null);
         // Re-join the room after reconnection
         const userId = userData._id;
-        newSocket.emit("join", userId);
+        if (userId) {
+          newSocket.emit("join", userId);
+        }
       });
 
       newSocket.on("reconnect_error", (error) => {
@@ -149,7 +161,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           // User logged in
           try {
             const userData: User = JSON.parse(e.newValue);
-            if (!user || user._id !== userData._id) {
+            const currentUserId = user?._id;
+            const newUserId = userData._id;
+            if (!user || currentUserId !== newUserId) {
               console.log(
                 "User changed, reinitializing socket for:",
                 userData.name
@@ -234,10 +248,33 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     [socket, user]
   );
 
+  const userStatusUpdates = useCallback(
+    (
+      callback: (data: {
+        userId: string;
+        isOnline: boolean;
+        lastSeen: Date;
+      }) => void
+    ) => {
+      if (socket) {
+        socket.on("userStatusUpdate", callback);
+      }
+    },
+    [socket]
+  );
+
+  const removeUserStatusListener = useCallback(() => {
+    if (socket) {
+      socket.off("userStatusUpdate");
+    }
+  }, [socket]);
+
   const contextValue: SocketContextType = {
     socket,
     sendMessage,
     isConnected,
+    userStatusUpdates,
+    removeUserStatusListener,
   };
 
   return (

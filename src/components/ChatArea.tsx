@@ -85,28 +85,37 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     };
 
     fetchMessages();
-  }, [selectedChat, currentUser, socket]);
+  }, [selectedChat?.id, currentUser?._id, socket]);
 
   useEffect(() => {
     if (!socket || !selectedChat || !currentUser) return;
 
     const handleNewMessage = (message: any) => {
       const newMessage: Message = {
-        id: message._id,
-        senderId: message.senderId,
+        id: message.id || message._id,
         text: message.text,
         timestamp: new Date(message.timestamp),
+        senderId: message.senderId,
         status: message.status,
         type: message.type,
+        messageId: message.messageId, // Store WhatsApp-style messageId for status tracking
       };
 
       if (newMessage.senderId === selectedChat.user._id) {
         setMessages((prev) => [...prev, newMessage]);
         onNewMessageUpdate(selectedChat.id, newMessage, false);
-        socket.emit("messageDeliveredAck", { messageId: newMessage.id });
-        socket.emit("markMessagesAsRead", {
-          chatPartnerId: selectedChat.user._id,
+
+        // Send delivery acknowledgment
+        socket.emit("messageDeliveredAck", {
+          messageId: newMessage.messageId || newMessage.id,
         });
+
+        // Mark messages as read after a short delay (simulating user seeing the message)
+        setTimeout(() => {
+          socket.emit("markMessagesAsRead", {
+            chatPartnerId: selectedChat.user._id,
+          });
+        }, 1500);
       }
     };
 
@@ -118,7 +127,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       status: "delivered" | "read";
     }) => {
       setMessages((prev) =>
-        prev.map((msg) => (msg.id === messageId ? { ...msg, status } : msg))
+        prev.map((msg) =>
+          msg.messageId === messageId || msg.id === messageId
+            ? { ...msg, status }
+            : msg
+        )
       );
     };
 

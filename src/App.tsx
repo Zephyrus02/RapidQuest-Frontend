@@ -201,6 +201,7 @@ function App() {
         handleLogout={handleLogout}
         handleAddNewContact={handleAddNewContact}
         handleNewMessageUpdate={handleNewMessageUpdate}
+        setChatList={setChatList}
       />
     </SocketProvider>
   );
@@ -213,8 +214,9 @@ const AuthenticatedApp = (props: any) => {
     selectedChatId,
     handleNewMessageUpdate,
     handleAddNewContact,
+    setChatList,
   } = props;
-  const { socket } = useSocket();
+  const { socket, userStatusUpdates, removeUserStatusListener } = useSocket();
 
   useEffect(() => {
     if (!socket || !currentUser) return;
@@ -255,12 +257,40 @@ const AuthenticatedApp = (props: any) => {
         }
       };
 
+      // Set up user status update listener
+      const handleUserStatusUpdate = (data: {
+        userId: string;
+        isOnline: boolean;
+        lastSeen: Date;
+      }) => {
+        console.log("User status update received:", data);
+        setChatList((prevChatList: Chat[]) =>
+          prevChatList.map((chat) => {
+            const userId = chat.user._id;
+            return userId === data.userId
+              ? {
+                  ...chat,
+                  user: {
+                    ...chat.user,
+                    isOnline: data.isOnline,
+                    lastSeen: data.isOnline
+                      ? undefined
+                      : new Date(data.lastSeen).toLocaleString(),
+                  },
+                }
+              : chat;
+          })
+        );
+      };
+
       socket.on("newMessage", handleGlobalNewMessage);
       socket.on("newContact", handleNewContact);
+      userStatusUpdates(handleUserStatusUpdate);
 
       return () => {
         socket.off("newMessage", handleGlobalNewMessage);
         socket.off("newContact", handleNewContact);
+        removeUserStatusListener();
       };
     } catch (error) {
       console.error("Error setting up socket listeners:", error);
@@ -271,6 +301,9 @@ const AuthenticatedApp = (props: any) => {
     selectedChatId,
     handleNewMessageUpdate,
     handleAddNewContact,
+    setChatList,
+    userStatusUpdates,
+    removeUserStatusListener,
   ]);
 
   return (

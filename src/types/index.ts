@@ -1,6 +1,5 @@
 export interface User {
   _id: string;
-  id?: string;
   name: string;
   isOnline: boolean;
   lastSeen?: string;
@@ -17,6 +16,7 @@ export interface Message {
   senderId: string;
   status: "sending" | "sent" | "delivered" | "read" | "failed";
   type: "text" | "image" | "document" | "audio";
+  messageId?: string; // WhatsApp-style message ID for status tracking
   fileUrl?: string;
   fileName?: string;
   fileSize?: string;
