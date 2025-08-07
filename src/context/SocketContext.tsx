@@ -1,16 +1,22 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import io, { Socket } from "socket.io-client";
 import { User, Message } from "../types";
 
 interface SocketContextType {
   socket: Socket | null;
-  sendMessage: (receiverEmail: string, body: string) => Promise<void>;
+  sendMessage: (receiverEmail: string, body: string) => Promise<Message>;
   isConnected: boolean;
 }
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
-  sendMessage: async () => {},
+  sendMessage: async () => Promise.reject(new Error("Socket not initialized")),
   isConnected: false,
 });
 
@@ -35,11 +41,16 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       setConnectionError(null);
 
       const socketUrl = import.meta.env.VITE_SOCKET_URL;
-      console.log("Connecting to socket server at:", socketUrl, "for user:", userData.name);
+      console.log(
+        "Connecting to socket server at:",
+        socketUrl,
+        "for user:",
+        userData.name
+      );
 
       // Connect to the socket server
       const newSocket = io(socketUrl, {
-        transports: ['websocket', 'polling'],
+        transports: ["websocket", "polling"],
         upgrade: true,
         rememberUpgrade: true,
         timeout: 5000,
@@ -49,14 +60,22 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       });
 
       newSocket.on("connect", () => {
-        console.log("Socket connected:", newSocket.id, "for user:", userData.name, "ID:", userData._id);
+        console.log(
+          "Socket connected:",
+          newSocket.id,
+          "for user:",
+          userData.name,
+          "ID:",
+          userData._id
+        );
         setIsConnected(true);
         setConnectionError(null);
-        
+
         // Validate user data before joining
-        if (userData._id) {
-          console.log("Emitting join event with userId:", userData._id);
-          newSocket.emit("join", userData._id);
+        const userId = userData._id;
+        if (userId) {
+          console.log("Emitting join event with userId:", userId);
+          newSocket.emit("join", userId);
         } else {
           console.error("Cannot join room: user ID is missing", userData);
         }
@@ -78,7 +97,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         setIsConnected(true);
         setConnectionError(null);
         // Re-join the room after reconnection
-        newSocket.emit("join", userData._id);
+        const userId = userData._id;
+        newSocket.emit("join", userId);
       });
 
       newSocket.on("reconnect_error", (error) => {
@@ -101,7 +121,11 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     if (userJson && !socket) {
       try {
         const userData: User = JSON.parse(userJson);
-        console.log("Initializing socket for user:", userData.name, userData._id);
+        console.log(
+          "Initializing socket for user:",
+          userData.name,
+          userData._id
+        );
         initializeSocket(userData);
       } catch (error) {
         console.error("Error parsing user data from localStorage:", error);
@@ -126,7 +150,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           try {
             const userData: User = JSON.parse(e.newValue);
             if (!user || user._id !== userData._id) {
-              console.log("User changed, reinitializing socket for:", userData.name);
+              console.log(
+                "User changed, reinitializing socket for:",
+                userData.name
+              );
               if (socket) {
                 socket.close();
               }
@@ -152,49 +179,60 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [user, socket, initializeSocket]);
 
-  const sendMessage = useCallback(async (receiverEmail: string, body: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      if (!socket || !user) {
-        reject(new Error("Socket not connected or user not found"));
-        return;
-      }
+  const sendMessage = useCallback(
+    async (receiverEmail: string, body: string): Promise<Message> => {
+      return new Promise((resolve, reject) => {
+        if (!socket || !user) {
+          reject(new Error("Socket not connected or user not found"));
+          return;
+        }
 
-      const tempId = `temp_${Date.now()}_${Math.random()}`;
-      
-      const handleMessageSent = (data: { tempId: string; message: any }) => {
-        if (data.tempId === tempId) {
+        const tempId = `temp_${Date.now()}_${Math.random()}`;
+
+        const handleMessageSent = (data: { tempId: string; message: any }) => {
+          if (data.tempId === tempId) {
+            socket.off("messageSent", handleMessageSent);
+            socket.off("messageError", handleMessageError);
+            const confirmedMessage: Message = {
+              ...data.message,
+              id: data.message._id, // Normalize ID
+              timestamp: new Date(data.message.timestamp),
+            };
+            resolve(confirmedMessage);
+          }
+        };
+
+        const handleMessageError = (data: {
+          tempId: string;
+          error: string;
+        }) => {
+          if (data.tempId === tempId) {
+            socket.off("messageSent", handleMessageSent);
+            socket.off("messageError", handleMessageError);
+            reject(new Error(data.error));
+          }
+        };
+
+        socket.on("messageSent", handleMessageSent);
+        socket.on("messageError", handleMessageError);
+
+        socket.emit("sendMessage", {
+          senderId: user._id,
+          receiverEmail,
+          body,
+          tempId,
+        });
+
+        // Timeout after 10 seconds
+        setTimeout(() => {
           socket.off("messageSent", handleMessageSent);
           socket.off("messageError", handleMessageError);
-          resolve();
-        }
-      };
-
-      const handleMessageError = (data: { tempId: string; error: string }) => {
-        if (data.tempId === tempId) {
-          socket.off("messageSent", handleMessageSent);
-          socket.off("messageError", handleMessageError);
-          reject(new Error(data.error));
-        }
-      };
-
-      socket.on("messageSent", handleMessageSent);
-      socket.on("messageError", handleMessageError);
-
-      socket.emit("sendMessage", {
-        senderId: user._id,
-        receiverEmail,
-        body,
-        tempId,
+          reject(new Error("Message send timeout"));
+        }, 10000);
       });
-
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        socket.off("messageSent", handleMessageSent);
-        socket.off("messageError", handleMessageError);
-        reject(new Error("Message send timeout"));
-      }, 10000);
-    });
-  }, [socket, user]);
+    },
+    [socket, user]
+  );
 
   const contextValue: SocketContextType = {
     socket,
@@ -203,6 +241,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   };
 
   return (
-    <SocketContext.Provider value={contextValue}>{children}</SocketContext.Provider>
+    <SocketContext.Provider value={contextValue}>
+      {children}
+    </SocketContext.Provider>
   );
 };

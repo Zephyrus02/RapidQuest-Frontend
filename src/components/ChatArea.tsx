@@ -162,7 +162,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         return;
       }
 
-      // Create optimistic message (temporary message that appears immediately)
       const tempId = `temp_${Date.now()}_${Math.random()}`;
       const optimisticMessage: Message = {
         id: tempId,
@@ -173,52 +172,16 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         type: "text",
       };
 
-      // Add optimistic message immediately
       setMessages((prev) => [...prev, optimisticMessage]);
       onNewMessageUpdate(selectedChat.id, optimisticMessage, false);
 
       try {
-        // Use Socket.IO if connected, fallback to API
         if (isConnected && socketSendMessage) {
-          // Listen for the actual message confirmation
-          const handleMessageSent = (data: { tempId: string; message: any }) => {
-            if (data.tempId === tempId) {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === tempId
-                    ? {
-                        id: data.message.id,
-                        text: data.message.text,
-                        timestamp: new Date(data.message.timestamp),
-                        senderId: data.message.senderId,
-                        status: data.message.status,
-                        type: data.message.type,
-                      }
-                    : msg
-                )
-              );
-              socket?.off("messageSent", handleMessageSent);
-            }
-          };
-
-          const handleMessageError = (data: { tempId: string; error: string }) => {
-            if (data.tempId === tempId) {
-              // Update message status to failed
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === tempId ? { ...msg, status: "failed" } : msg
-                )
-              );
-              console.error("Message failed:", data.error);
-              socket?.off("messageSent", handleMessageSent);
-              socket?.off("messageError", handleMessageError);
-            }
-          };
-
-          socket?.on("messageSent", handleMessageSent);
-          socket?.on("messageError", handleMessageError);
-
-          await socketSendMessage(receiverEmail, body);
+          const confirmedMessage = await socketSendMessage(receiverEmail, body);
+          setMessages((prev) =>
+            prev.map((msg) => (msg.id === tempId ? confirmedMessage : msg))
+          );
+          onNewMessageUpdate(selectedChat.id, confirmedMessage, false);
         } else {
           // Fallback to REST API
           const response = await api.post("/messages/", {
@@ -227,22 +190,21 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           });
 
           const sentMessage: Message = {
-            id: response.data.id,
+            id: response.data._id,
             text: response.data.text,
             timestamp: new Date(response.data.timestamp),
-            senderId: response.data.senderId,
+            senderId: currentUser._id,
             status: response.data.status,
             type: response.data.type,
           };
 
-          // Replace optimistic message with real message
           setMessages((prev) =>
             prev.map((msg) => (msg.id === tempId ? sentMessage : msg))
           );
+          onNewMessageUpdate(selectedChat.id, sentMessage, false);
         }
       } catch (error) {
         console.error("Error sending message:", error);
-        // Update optimistic message status to failed
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === tempId ? { ...msg, status: "failed" } : msg
@@ -257,7 +219,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         timestamp: new Date(),
         senderId: currentUser._id,
         status: "sent",
-        type: "text",
+        type: textOrMessage.type || "text",
         ...(textOrMessage as Partial<Message>),
       };
       setMessages((prev) => [...prev, newMessage]);

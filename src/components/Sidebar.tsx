@@ -297,6 +297,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <ChatItem
                 key={chat.id}
                 chat={chat}
+                currentUser={currentUser}
                 isSelected={!isExporting && selectedChatId === chat.id}
                 onClick={() => !isExporting && onChatSelect(chat.id)}
                 isExporting={isExporting}

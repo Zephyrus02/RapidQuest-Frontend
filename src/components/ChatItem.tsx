@@ -1,9 +1,10 @@
 import React from "react";
 import { Check, CheckCheck, Volume2 } from "lucide-react";
-import { Chat } from "../types";
+import { Chat, User as UserType } from "../types";
 
 interface ChatItemProps {
   chat: Chat;
+  currentUser: UserType | null;
   isSelected: boolean;
   onClick: () => void;
   isExporting: boolean;
@@ -13,6 +14,7 @@ interface ChatItemProps {
 
 const ChatItem: React.FC<ChatItemProps> = ({
   chat,
+  currentUser,
   isSelected,
   onClick,
   isExporting,
@@ -99,26 +101,27 @@ const ChatItem: React.FC<ChatItemProps> = ({
 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-1 flex-1 min-w-0">
-            {chat.lastMessage?.senderId === "current-user" && (
-              <div className="flex-shrink-0">
-                {chat.lastMessage.status === "read" ? (
-                  <CheckCheck
-                    size={16}
-                    className="text-blue-500 dark:text-wa-read-receipt-dark"
-                  />
-                ) : chat.lastMessage.status === "delivered" ? (
-                  <CheckCheck
-                    size={16}
-                    className="text-gray-500 dark:text-wa-text-secondary-dark"
-                  />
-                ) : (
-                  <Check
-                    size={16}
-                    className="text-gray-500 dark:text-wa-text-secondary-dark"
-                  />
-                )}
-              </div>
-            )}
+            {chat.lastMessage &&
+              chat.lastMessage.senderId === currentUser?._id && (
+                <div className="flex-shrink-0">
+                  {chat.lastMessage.status === "read" ? (
+                    <CheckCheck
+                      size={16}
+                      className="text-blue-500 dark:text-wa-read-receipt-dark"
+                    />
+                  ) : chat.lastMessage.status === "delivered" ? (
+                    <CheckCheck
+                      size={16}
+                      className="text-gray-500 dark:text-wa-text-secondary-dark"
+                    />
+                  ) : (
+                    <Check
+                      size={16}
+                      className="text-gray-500 dark:text-wa-text-secondary-dark"
+                    />
+                  )}
+                </div>
+              )}
             <span className="text-sm text-gray-600 dark:text-wa-text-secondary-dark truncate">
               {chat.lastMessage
                 ? truncateMessage(chat.lastMessage.text)
