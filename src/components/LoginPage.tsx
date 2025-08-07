@@ -35,8 +35,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
     try {
       const response = await api.post("/auth/login", { email, password });
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+      const { user, token } = response.data;
+      // Normalize user object to use `_id`
+      const normalizedUser = { ...user, _id: user.id };
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(normalizedUser));
       onLogin();
     } catch (err: any) {
       setError(
@@ -70,8 +73,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
       });
 
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+      const { user, token } = response.data;
+      // Normalize user object to use `_id`
+      const normalizedUser = { ...user, _id: user.id };
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(normalizedUser));
       onLogin();
     } catch (err: any) {
       setError(
