@@ -11,7 +11,6 @@ import {
   ChevronUp,
   ChevronDown,
   X,
-  Loader2,
 } from "lucide-react";
 import { Chat, Message, User } from "../types";
 import MessageList from "./MessageList";

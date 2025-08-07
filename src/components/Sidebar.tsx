@@ -3,7 +3,6 @@ import {
   Search,
   MoreVertical,
   MessageCircle,
-  Settings,
   Moon,
   Sun,
   User,

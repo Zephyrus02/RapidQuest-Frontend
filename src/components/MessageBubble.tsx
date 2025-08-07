@@ -20,7 +20,6 @@ interface MessageBubbleProps {
 const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   currentUser,
-  isLast,
   searchQuery,
   isHighlighted,
 }) => {
