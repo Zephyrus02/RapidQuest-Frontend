@@ -261,16 +261,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             >
               Unread
             </button>
-            <button
-              onClick={() => setActiveFilter("groups")}
-              className={`flex-1 px-4 py-3 font-medium transition-colors ${
-                activeFilter === "groups"
-                  ? "text-green-600 dark:text-wa-green border-b-2 border-green-600 dark:border-wa-green"
-                  : "text-gray-600 dark:text-wa-text-secondary-dark hover:bg-gray-50 dark:hover:bg-wa-hover-dark"
-              }`}
-            >
-              Groups
-            </button>
           </div>
         </>
       )}
