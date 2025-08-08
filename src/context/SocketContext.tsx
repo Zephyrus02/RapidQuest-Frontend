@@ -82,10 +82,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         setConnectionError(null);
 
         // Validate user data before joining
-        const userId = userData._id;
-        if (userId) {
-          console.log("Emitting join event with userId:", userId);
-          newSocket.emit("join", userId);
+        const userName = userData.name;
+        if (userName) {
+          console.log("Emitting join event with userName:", userName);
+          newSocket.emit("join", userName);
         } else {
           console.error("Cannot join room: user ID is missing", userData);
         }
@@ -107,9 +107,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         setIsConnected(true);
         setConnectionError(null);
         // Re-join the room after reconnection
-        const userId = userData._id;
-        if (userId) {
-          newSocket.emit("join", userId);
+        const userName = userData.name;
+        if (userName) {
+          newSocket.emit("join", userName);
         }
       });
 
@@ -135,8 +135,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         const userData: User = JSON.parse(userJson);
         console.log(
           "Initializing socket for user:",
-          userData.name,
-          userData._id
+          userData.name
+          // userData._id
         );
         initializeSocket(userData);
       } catch (error) {
