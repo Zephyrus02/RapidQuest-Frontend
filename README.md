@@ -38,7 +38,7 @@ A modern, responsive WhatsApp-like chat application built with React, TypeScript
 
 ### Step 1: Initial Setup
 1. Ensure both backend and frontend servers are running
-2. Open your browser and navigate to `http://localhost:5173`
+2. Open your browser and navigate to `http://localhost:5173` if locally hosted or `https://rapid-quest-frontend-eta.vercel.app/`
 3. You'll see the WhatsApp-style login page
 
 ### Step 2: Create User Accounts
@@ -58,7 +58,7 @@ A modern, responsive WhatsApp-like chat application built with React, TypeScript
 
 #### Create Second User (Bob)
 1. **Open a new browser window/tab or use incognito mode**
-2. Navigate to `http://localhost:5173`
+2. Navigate to `http://localhost:5173` if locally hosted or `https://rapid-quest-frontend-eta.vercel.app/`
 3. Click **"Don't have an account? Sign Up"**
 4. Fill in the registration form:
    - **Name**: `Bob Smith`
@@ -73,18 +73,11 @@ A modern, responsive WhatsApp-like chat application built with React, TypeScript
 ### Step 3: Adding Contacts
 
 #### Alice Adds Bob as Contact
-1. In Alice's window, look for the **"+"** button in the sidebar
-2. Click the **"+"** button to open "Add Contact" modal
-3. Enter Bob's email: `bob@test.com`
+1. In Alice's window, look for the chat button in the top of the sidebar
+2. Click the chat button to open "Add Contact" modal
+3. Enter Bob's phone number: `+0987654321`
 4. Click **"Add Contact"**
 5. You should see a success message and Bob appears in Alice's contact list
-
-#### Bob Adds Alice as Contact
-1. In Bob's window, click the **"+"** button
-2. Enter Alice's email: `alice@test.com`
-3. Click **"Add Contact"**
-4. Alice should appear in Bob's contact list
-5. Bob will also receive a notification that Alice added him
 
 ### Step 4: Send Messages & Test Real-Time Features
 
