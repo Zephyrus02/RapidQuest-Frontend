@@ -45,7 +45,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<string[]>([]);
-  const [currentResultIndex, setCurrentResultIndex] = useState(-1);
+  const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const { socket, sendMessage: socketSendMessage, isConnected } = useSocket();
 
   useEffect(() => {
@@ -239,11 +239,27 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     }
   };
 
-  const handleCloseSearch = () => {
-    setIsSearching(false);
-    setSearchQuery("");
-  };
+  // Update search results when searchQuery or messages change
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setCurrentResultIndex(0);
+      return;
+    }
+    const lower = searchQuery.toLowerCase();
+    const matches = messages
+      .filter(
+        (msg) =>
+          msg.type === "text" &&
+          msg.text &&
+          msg.text.toLowerCase().includes(lower)
+      )
+      .map((msg) => msg.id);
+    setSearchResults(matches);
+    setCurrentResultIndex(matches.length > 0 ? 0 : -1);
+  }, [searchQuery, messages]);
 
+  // Navigation handlers
   const handleNextResult = () => {
     if (searchResults.length > 0) {
       setCurrentResultIndex((prev) => (prev + 1) % searchResults.length);
@@ -256,6 +272,13 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         (prev) => (prev - 1 + searchResults.length) % searchResults.length
       );
     }
+  };
+
+  const handleCloseSearch = () => {
+    setIsSearching(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setCurrentResultIndex(0);
   };
 
   const handleArchiveChat = () => {
@@ -353,17 +376,15 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             />
           </div>
           <div className="flex items-center space-x-2 text-gray-600 dark:text-wa-panel-header-icon-dark">
-            {searchResults.length > 0 ? (
+            {searchQuery && searchResults.length > 0 ? (
               <span className="text-sm text-gray-500 dark:text-wa-text-secondary-dark">
                 {currentResultIndex + 1} of {searchResults.length}
               </span>
-            ) : (
-              searchQuery && (
-                <span className="text-sm text-gray-500 dark:text-wa-text-secondary-dark">
-                  No results
-                </span>
-              )
-            )}
+            ) : searchQuery ? (
+              <span className="text-sm text-gray-500 dark:text-wa-text-secondary-dark">
+                No results
+              </span>
+            ) : null}
             <button
               onClick={handlePrevResult}
               disabled={searchResults.length === 0}
@@ -502,7 +523,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             isLoading={isLoadingMessages}
             searchQuery={searchQuery}
             highlightedMessageId={
-              searchResults.length > 0
+              searchResults.length > 0 && currentResultIndex >= 0
                 ? searchResults[currentResultIndex]
                 : undefined
             }
