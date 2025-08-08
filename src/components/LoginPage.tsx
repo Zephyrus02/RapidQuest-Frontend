@@ -75,9 +75,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
       const { user, token } = response.data;
       // Normalize the user object to use `_id` which the app expects.
-      const normalizedUser = { ...user, _id: user.id };
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(normalizedUser));
+      localStorage.setItem("user", JSON.stringify(user));
       onLogin();
     } catch (err: any) {
       setError(
