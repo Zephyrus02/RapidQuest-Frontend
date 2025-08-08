@@ -46,7 +46,13 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<string[]>([]);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
-  const { socket, sendMessage: socketSendMessage, isConnected } = useSocket();
+  const {
+    socket,
+    sendMessage: socketSendMessage,
+    isConnected,
+    isContactOnline,
+    getContactLastSeen,
+  } = useSocket();
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -356,6 +362,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     );
   }
 
+  const isOnline = isContactOnline(selectedChat.user._id);
+  const lastSeen = getContactLastSeen(selectedChat.user._id);
+
   return (
     <div className="flex-1 flex flex-col bg-gray-50 dark:bg-wa-chat-bg-dark">
       {/* Chat Header */}
@@ -426,7 +435,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                 alt={selectedChat.user.name}
                 className="w-10 h-10 rounded-full object-cover"
               />
-              {selectedChat.user.isOnline && (
+              {isOnline && (
                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-wa-panel-bg-dark rounded-full"></div>
               )}
             </div>
@@ -435,9 +444,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                 {selectedChat.user.name}
               </h2>
               <p className="text-sm text-gray-600 dark:text-wa-text-secondary-dark">
-                {selectedChat.user.isOnline
+                {isOnline
                   ? "online"
-                  : selectedChat.user.lastSeen}
+                  : lastSeen
+                  ? `last seen ${new Date(lastSeen).toLocaleString()}`
+                  : ""}
               </p>
             </div>
           </div>

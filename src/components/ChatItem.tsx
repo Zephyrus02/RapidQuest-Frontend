@@ -1,6 +1,7 @@
 import React from "react";
 import { Check, CheckCheck, Volume2 } from "lucide-react";
 import { Chat, User as UserType } from "../types";
+import { useSocket } from "../context/SocketContext"; // <-- Add this import
 
 interface ChatItemProps {
   chat: Chat;
@@ -21,6 +22,11 @@ const ChatItem: React.FC<ChatItemProps> = ({
   isSelectedForExport,
   onToggleExport,
 }) => {
+  const { isContactOnline, getContactLastSeen } = useSocket(); // <-- Use context
+
+  const isOnline = isContactOnline(chat.user._id);
+  const lastSeen = getContactLastSeen(chat.user._id);
+
   const formatTime = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -61,7 +67,7 @@ const ChatItem: React.FC<ChatItemProps> = ({
             checked={isSelectedForExport}
             onChange={onToggleExport}
             className="w-5 h-5 rounded text-green-500 focus:ring-green-500 dark:bg-wa-panel-bg-dark dark:border-wa-text-secondary-dark"
-            onClick={(e) => e.stopPropagation()} // Prevent the div's onClick from firing
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
@@ -71,7 +77,7 @@ const ChatItem: React.FC<ChatItemProps> = ({
           alt={chat.user.name}
           className="w-12 h-12 rounded-full object-cover"
         />
-        {chat.user.isOnline && (
+        {isOnline && (
           <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-wa-bg-dark rounded-full"></div>
         )}
       </div>
