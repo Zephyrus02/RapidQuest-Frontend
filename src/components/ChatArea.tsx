@@ -495,7 +495,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3e%3cpath d='M 0 15 C 10 0, 20 0, 30 15 S 50 30, 60 15' stroke='%23e5e7eb' stroke-width='1' fill='none'/%3e%3cpath d='M 0 45 C 10 30, 20 30, 30 45 S 50 60, 60 45' stroke='%23e5e7eb' stroke-width='1' fill='none'/%3e%3c/svg%3e")`,
           }}
         ></div>
-        <div className="relative z-10 h-full">
+        <div className="relative z-10 h-full overflow-y-auto">
           <MessageList
             currentUser={currentUser}
             messages={messages}

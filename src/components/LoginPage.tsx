@@ -36,7 +36,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     try {
       const response = await api.post("/auth/login", { email, password });
       const { user, token } = response.data;
-      // Normalize the user object to use `_id`
+      // Normalize the user object to use `_id` which the app expects.
       const normalizedUser = { ...user, _id: user.id };
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(normalizedUser));
@@ -74,7 +74,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       });
 
       const { user, token } = response.data;
-      // Normalize the user object to use `_id`
+      // Normalize the user object to use `_id` which the app expects.
       const normalizedUser = { ...user, _id: user.id };
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(normalizedUser));

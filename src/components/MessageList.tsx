@@ -73,7 +73,7 @@ const MessageList: React.FC<MessageListProps> = ({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
+    <div className="px-4 md:px-6 py-4">
       {Object.entries(messageGroups).map(([dateString, dateMessages]) => (
         <div key={dateString}>
           {/* Date header */}
